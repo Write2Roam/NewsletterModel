@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Revenue Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Basic CSS for layout */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .input-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .output-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .revenue-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .revenue-table th, .revenue-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+
+        .revenue-table th {
+            background: #f0f0f0;
+        }
+
+        .highlight {
+            background: #90EE90;
+        }
+
+        .revenue-breakdown {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 4px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .revenue-details {
+            padding: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .revenue-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .revenue-item:last-child {
+            border-bottom: none;
+        }
+
+        .revenue-type {
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        #totalPercentage {
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .revenue-allocation {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .revenue-allocation h3 {
+            margin-top: 0;
+        }
+
+        #totalPercentage {
+            margin-bottom: 15px;
+            padding: 8px;
+            text-align: center;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        #totalPercentage.under {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        #totalPercentage.over {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        #totalPercentage.balanced {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .allocation-status {
+            font-size: 0.9em;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .percent-display {
+            float: right;
+            font-weight: normal;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .event-options {
+            margin-top: 2rem;
+        }
+
+        .event-tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .event-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .event-tab.active {
+            color: #2196F3;
+            border-bottom: 2px solid #2196F3;
+            margin-bottom: -2px;
+        }
+
+        .event-content {
+            display: none;
+        }
+
+        .event-content.active {
+            display: block;
+        }
+
+        .per-event-summary {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .revenue-goal {
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 0.5rem;
+        }
+
+        .blended-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .revenue-gap {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        .sponsor-options {
+            margin-top: 1rem;
+        }
+
+        .sponsor-option {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sponsor-option:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Newsletter Revenue Calculator</h1>
+    
+    <div class="container">
+        <div class="input-section">
+            <h2>Inputs</h2>
+            <form id="calculatorForm">
+                <div class="form-group">
+                    <label for="targetRevenue">Target Annual Revenue ($)</label>
+                    <input type="number" id="targetRevenue" value="250000" min="0">
+                </div>
+
+                <div class="revenue-allocation">
+                    <h3>Revenue Allocation</h3>
+                    <div id="totalPercentage">Total: 100%</div>
+                    <div class="allocation-status"></div>
+                    
+                    <div class="form-group">
+                        <label for="adRevenuePct">Ad Revenue: <span class="percent-display">25%</span></label>
+                        <input type="range" id="adRevenuePct" value="25" min="0" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subRevenuePct">Subscription Revenue: <span class="percent-display">10%</span></label>
+                        <input type="range" id="subRevenuePct" value="10" min="0" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="premiumContentPct">Premium Content Sales: <span class="percent-display">15%</span></label>
+                        <input type="range" id="premiumContentPct" value="15" min="0" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventRevenuePct">Event Revenue: <span class="percent-display">50%</span></label>
+                        <input type="range" id="eventRevenuePct" value="50" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cpm">Advertising CPM ($)</label>
+                    <input type="number" id="cpm" value="20" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="weeklySends">Weekly Sends</label>
+                    <input type="number" id="weeklySends" value="2" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="annualEvents">Number of Events per Year</label>
+                    <input type="number" id="annualEvents" value="4" min="1" max="12">
+                </div>
+            </form>
+        </div>
+
+        <div class="output-section">
+            <h2>Results</h2>
+            <div id="revenueBreakdown" class="revenue-breakdown">
+                <div class="revenue-details">
+                    <h3>Revenue Breakdown</h3>
+                    <div id="revenueItems"></div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <h3>Subscriber Requirements</h3>
+            <div id="subscriberResults">
+                <!-- Subscriber calculations will be inserted here -->
+            </div>
+
+            <h3>Premium Subscription Options</h3>
+            <div id="subscriptionTable">
+                <!-- Subscription table will be inserted here -->
+            </div>
+
+            <h3>Premium Content Sales</h3>
+            <div class="premium-content-summary">
+                <div id="premiumContentTarget"></div>
+                <div id="audienceSize"></div>
+            </div>
+            <div id="premiumContentTable">
+                <!-- Premium content table will be inserted here -->
+            </div>
+
+            <div class="event-options">
+                <h3>Event Revenue Options</h3>
+                <div class="per-event-summary">
+                    <div class="revenue-goal"></div>
+                    <div id="perEventTarget"></div>
+                </div>
+
+                <div class="event-tabs">
+                    <button class="event-tab active" data-tab="tickets">Ticket Sales</button>
+                    <button class="event-tab" data-tab="sponsors">Sponsorships</button>
+                    <button class="event-tab" data-tab="blended">Blended Revenue</button>
+                </div>
+
+                <div class="event-content active" id="ticketsContent">
+                    <div id="eventTable">
+                        <!-- Ticket revenue table will be inserted here -->
+                    </div>
+                </div>
+
+                <div class="event-content" id="sponsorsContent">
+                    <div id="sponsorTable">
+                        <!-- Sponsor revenue table will be inserted here -->
+                    </div>
+                </div>
+
+                <div class="event-content" id="blendedContent">
+                    <div class="blended-inputs">
+                        <div class="form-group">
+                            <label for="blendedAttendees">Number of Attendees:</label>
+                            <input type="number" id="blendedAttendees" value="20" min="1" max="1000">
+                        </div>
+                        <div class="form-group">
+                            <label for="blendedTicketPrice">Ticket Price ($):</label>
+                            <input type="number" id="blendedTicketPrice" value="100" min="0" max="5000">
+                        </div>
+                    </div>
+                    <div id="blendedResults">
+                        <!-- Blended revenue calculations will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utility functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        // Main calculator function
+        function calculateAll() {
+            // Get input values
+            const targetRevenue = parseFloat(document.getElementById('targetRevenue').value);
+            const adRevenuePct = parseFloat(document.getElementById('adRevenuePct').value) / 100;
+            const subRevenuePct = parseFloat(document.getElementById('subRevenuePct').value) / 100;
+            const premiumContentPct = parseFloat(document.getElementById('premiumContentPct').value) / 100;
+            const eventRevenuePct = parseFloat(document.getElementById('eventRevenuePct').value) / 100;
+            const cpm = parseFloat(document.getElementById('cpm').value);
+            const weeklySends = parseFloat(document.getElementById('weeklySends').value);
+
+            // Calculate target revenue for each stream
+            const adRevenueTarget = targetRevenue * adRevenuePct;
+            const subRevenueTarget = targetRevenue * subRevenuePct;
+            const premiumContentTarget = targetRevenue * premiumContentPct;
+            const eventRevenueTarget = targetRevenue * eventRevenuePct;
+
+            // Calculate required subscribers for ad revenue
+            const annualSends = weeklySends * 52;
+            const requiredSubscribers = Math.ceil((adRevenueTarget * 1000) / (cpm * annualSends));
+
+            // Update revenue breakdown
+            updateRevenueBreakdown(adRevenueTarget, subRevenueTarget, premiumContentTarget, eventRevenueTarget, requiredSubscribers);
+
+            // Generate tables
+            generateSubscriptionTable(subRevenueTarget);
+            generatePremiumContentTable(premiumContentTarget, requiredSubscribers);
+            generateEventTable(eventRevenueTarget);
+
+            if (document.querySelector('.event-tab[data-tab="blended"]').classList.contains('active')) {
+                calculateBlendedRevenue();
+            }
+        }
+
+        function updateRevenueBreakdown(adRevenue, subRevenue, premiumContentRevenue, eventRevenue, subscribers) {
+            const revenueItems = document.getElementById('revenueItems');
+            const total = adRevenue + subRevenue + premiumContentRevenue + eventRevenue;
+            
+            revenueItems.innerHTML = `
+                <div class="revenue-item">
+                    <span class="revenue-type">Advertising Revenue:</span>
+                    <span>${formatCurrency(adRevenue)}</span>
+                </div>
+                <div class="revenue-item">
+                    <span class="revenue-type">Subscription Revenue:</span>
+                    <span>${formatCurrency(subRevenue)}</span>
+                </div>
+                <div class="revenue-item">
+                    <span class="revenue-type">Premium Content Sales:</span>
+                    <span>${formatCurrency(premiumContentRevenue)}</span>
+                </div>
+                <div class="revenue-item">
+                    <span class="revenue-type">Event Revenue:</span>
+                    <span>${formatCurrency(eventRevenue)}</span>
+                </div>
+                <div class="revenue-item">
+                    <span class="revenue-type">Total Revenue:</span>
+                    <span>${formatCurrency(total)}</span>
+                </div>
+            `;
+
+            // Update the pie chart
+            updateRevenueChart(adRevenue, subRevenue, premiumContentRevenue, eventRevenue);
+
+            const subscriberResults = document.getElementById('subscriberResults');
+            subscriberResults.innerHTML = `
+                <p>Required Free Subscribers for Ad Revenue: ${subscribers.toLocaleString()}</p>
+            `;
+        }
+
+        let revenueChart = null;
+
+        function updateRevenueChart(adRevenue, subRevenue, premiumContentRevenue, eventRevenue) {
+            const ctx = document.getElementById('revenueChart');
+            
+            const data = {
+                labels: ['Advertising', 'Subscriptions', 'Premium Content', 'Events'],
+                datasets: [{
+                    data: [adRevenue, subRevenue, premiumContentRevenue, eventRevenue],
+                    backgroundColor: [
+                        '#4CAF50',  // Green for ads
+                        '#2196F3',  // Blue for subscriptions
+                        '#9C27B0',  // Purple for premium content
+                        '#FFC107'   // Amber for events
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            const options = {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            };
+
+            // Destroy existing chart if it exists
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+
+            // Create new chart
+            revenueChart = new Chart(ctx, {
+                type: 'pie',
+                data: data,
+                options: options
+            });
+        }
+
+        function generateSubscriptionTable(targetRevenue) {
+            const prices = [10, 25, 50, 100, 150, 200, 250];
+            const subscribers = [100, 250, 500, 1000, 2500, 5000, 10000];
+            
+            let tableHTML = '<table class="revenue-table"><tr><th>Subscribers</th>';
+            prices.forEach(price => {
+                tableHTML += `<th>${formatCurrency(price)}/mo</th>`;
+            });
+            tableHTML += '</tr>';
+
+            subscribers.forEach(subCount => {
+                tableHTML += '<tr><td>' + subCount + '</td>';
+                prices.forEach(price => {
+                    const annualRevenue = price * 12 * subCount;
+                    const className = annualRevenue >= targetRevenue ? 'highlight' : '';
+                    tableHTML += `<td class="${className}">${formatCurrency(annualRevenue)}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</table>';
+
+            document.getElementById('subscriptionTable').innerHTML = tableHTML;
+        }
+
+        function generateEventTable(targetRevenue) {
+            const annualEvents = parseInt(document.getElementById('annualEvents').value) || 4;
+            const revenuePerEvent = targetRevenue / annualEvents;
+            
+            // Update the per-event summary
+            document.querySelector('.revenue-goal').textContent = 
+                `Annual Event Revenue Target: ${formatCurrency(targetRevenue)}`;
+            document.getElementById('perEventTarget').textContent = 
+                `Target Revenue per Event: ${formatCurrency(revenuePerEvent)} (${annualEvents} events per year)`;
+
+            // Generate ticket sales table
+            const prices = [100, 250, 500, 1000, 1500, 2000, 2500, 5000];
+            const attendees = [10, 25, 50, 100, 250, 500, 750, 1000];
+            
+            let ticketTableHTML = '<table class="revenue-table"><tr><th>Attendees</th>';
+            prices.forEach(price => {
+                ticketTableHTML += `<th>${formatCurrency(price)}/ticket</th>`;
+            });
+            ticketTableHTML += '</tr>';
+
+            attendees.forEach(count => {
+                ticketTableHTML += '<tr><td>' + count + '</td>';
+                prices.forEach(price => {
+                    const revenue = price * count;
+                    const className = revenue >= revenuePerEvent ? 'highlight' : '';
+                    ticketTableHTML += `<td class="${className}">${formatCurrency(revenue)}</td>`;
+                });
+                ticketTableHTML += '</tr>';
+            });
+            ticketTableHTML += '</table>';
+            document.getElementById('eventTable').innerHTML = ticketTableHTML;
+
+            // Generate sponsorship table
+            const sponsorLevels = [2500, 5000, 10000, 15000, 25000, 50000];
+            const sponsorCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            
+            let sponsorTableHTML = '<table class="revenue-table"><tr><th>Number of Sponsors</th>';
+            sponsorLevels.forEach(level => {
+                sponsorTableHTML += `<th>${formatCurrency(level)}/sponsor</th>`;
+            });
+            sponsorTableHTML += '</tr>';
+
+            sponsorCounts.forEach(count => {
+                sponsorTableHTML += '<tr><td>' + count + '</td>';
+                sponsorLevels.forEach(level => {
+                    const revenue = level * count;
+                    const className = revenue >= revenuePerEvent ? 'highlight' : '';
+                    sponsorTableHTML += `<td class="${className}">${formatCurrency(revenue)}</td>`;
+                });
+                sponsorTableHTML += '</tr>';
+            });
+            sponsorTableHTML += '</table>';
+            document.getElementById('sponsorTable').innerHTML = sponsorTableHTML;
+        }
+
+        function generatePremiumContentTable(targetRevenue, audienceSize) {
+            // Update the premium content summary
+            document.getElementById('premiumContentTarget').innerHTML = `
+                <p><strong>Annual Premium Content Revenue Target:</strong> ${formatCurrency(targetRevenue)}</p>
+                <p><strong>Total Audience Size:</strong> ${audienceSize.toLocaleString()} subscribers</p>
+            `;
+
+            const prices = [10, 25, 50, 100, 150, 200, 250];
+            const conversionRates = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10];
+            
+            let tableHTML = '<table class="revenue-table"><tr><th>Conversion Rate</th>';
+            prices.forEach(price => {
+                tableHTML += `<th>${formatCurrency(price)}/report</th>`;
+            });
+            tableHTML += '</tr>';
+
+            conversionRates.forEach(rate => {
+                const buyers = Math.round(audienceSize * rate);
+                tableHTML += `<tr><td>${(rate * 100)}% (${buyers.toLocaleString()} buyers)</td>`;
+                prices.forEach(price => {
+                    const revenue = price * buyers;
+                    const className = revenue >= targetRevenue ? 'highlight' : '';
+                    tableHTML += `<td class="${className}">${formatCurrency(revenue)}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</table>';
+
+            document.getElementById('premiumContentTable').innerHTML = tableHTML;
+        }
+
+        // Add revenue slider logic
+        function updateRevenuePercentages(changedSliderId) {
+            const sliders = {
+                adRevenuePct: document.getElementById('adRevenuePct'),
+                subRevenuePct: document.getElementById('subRevenuePct'),
+                premiumContentPct: document.getElementById('premiumContentPct'),
+                eventRevenuePct: document.getElementById('eventRevenuePct')
+            };
+            
+            const total = Object.values(sliders).reduce((sum, slider) => sum + parseFloat(slider.value), 0);
+            const totalDisplay = document.getElementById('totalPercentage');
+            const allocationStatus = document.querySelector('.allocation-status');
+            
+            // Update percentage displays
+            Object.keys(sliders).forEach(id => {
+                const percentDisplay = sliders[id].parentElement.querySelector('.percent-display');
+                percentDisplay.textContent = `${Math.round(sliders[id].value)}%`;
+            });
+
+            // Update total display and status
+            totalDisplay.textContent = `Total Allocated: ${Math.round(total)}%`;
+            
+            if (total < 100) {
+                totalDisplay.className = 'under';
+                allocationStatus.textContent = `Underallocated by ${Math.round(100 - total)}%`;
+            } else if (total > 100) {
+                totalDisplay.className = 'over';
+                allocationStatus.textContent = `Overallocated by ${Math.round(total - 100)}%`;
+            } else {
+                totalDisplay.className = 'balanced';
+                allocationStatus.textContent = 'Perfect allocation!';
+            }
+
+            calculateAll();
+        }
+
+        // Add event listeners for revenue sliders
+        ['adRevenuePct', 'subRevenuePct', 'premiumContentPct', 'eventRevenuePct'].forEach(id => {
+            const slider = document.getElementById(id);
+            slider.addEventListener('input', () => updateRevenuePercentages(id));
+        });
+
+        // Add event listeners
+        document.querySelectorAll('#calculatorForm input').forEach(input => {
+            input.addEventListener('input', calculateAll);
+        });
+
+        // Add tab switching functionality
+        document.querySelectorAll('.event-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.event-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.event-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const contentId = tab.dataset.tab === 'tickets' ? 'ticketsContent' : 
+                                tab.dataset.tab === 'sponsors' ? 'sponsorsContent' : 'blendedContent';
+                document.getElementById(contentId).classList.add('active');
+
+                if (tab.dataset.tab === 'blended') {
+                    calculateBlendedRevenue();
+                }
+            });
+        });
+
+        function calculateBlendedRevenue() {
+            const targetRevenue = parseFloat(document.getElementById('targetRevenue').value);
+            const annualEvents = parseInt(document.getElementById('annualEvents').value) || 4;
+            const revenuePerEvent = targetRevenue * (parseFloat(document.getElementById('eventRevenuePct').value) / 100) / annualEvents;
+            
+            const attendees = parseInt(document.getElementById('blendedAttendees').value) || 20;
+            const ticketPrice = parseFloat(document.getElementById('blendedTicketPrice').value) || 100;
+            
+            const ticketRevenue = attendees * ticketPrice;
+            const revenueGap = Math.max(0, revenuePerEvent - ticketRevenue);
+            
+            const sponsorLevels = [2500, 5000, 10000, 15000, 25000, 50000];
+            
+            let resultsHTML = `
+                <div class="revenue-gap">
+                    <h4>Revenue Breakdown</h4>
+                    <p>Target Revenue per Event: ${formatCurrency(revenuePerEvent)}</p>
+                    <p>Ticket Revenue (${attendees} attendees × ${formatCurrency(ticketPrice)}): ${formatCurrency(ticketRevenue)}</p>
+                    <p>Revenue Gap to Fill: ${formatCurrency(revenueGap)}</p>
+                </div>`;
+
+            if (revenueGap > 0) {
+                resultsHTML += `
+                    <div class="sponsor-options">
+                        <h4>Sponsorship Options to Fill Gap</h4>`;
+                
+                sponsorLevels.forEach(level => {
+                    const sponsorsNeeded = Math.ceil(revenueGap / level);
+                    const totalSponsorRevenue = sponsorsNeeded * level;
+                    resultsHTML += `
+                        <div class="sponsor-option">
+                            <span>${sponsorsNeeded} sponsor${sponsorsNeeded > 1 ? 's' : ''} at ${formatCurrency(level)}</span>
+                            <span>${formatCurrency(totalSponsorRevenue)}</span>
+                        </div>`;
+                });
+                
+                resultsHTML += '</div>';
+            } else {
+                resultsHTML += `
+                    <div class="sponsor-options">
+                        <p>✨ Ticket revenue exceeds target! No additional sponsorship needed.</p>
+                        <p>Excess revenue: ${formatCurrency(-revenueGap)}</p>
+                    </div>`;
+            }
+            
+            document.getElementById('blendedResults').innerHTML = resultsHTML;
+        }
+
+        // Add event listeners for blended revenue inputs
+        ['blendedAttendees', 'blendedTicketPrice'].forEach(id => {
+            const input = document.getElementById(id);
+            input.addEventListener('input', calculateBlendedRevenue);
+        });
+
+        // Initial calculation
+        calculateAll();
+    </script>
+</body>
+</html> 
